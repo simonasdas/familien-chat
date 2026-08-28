@@ -251,19 +251,6 @@ export function getUserByName(name: string): User | null {
   return row ? rowToUser(row) : null;
 }
 
-export function deleteUserByName(name: string): boolean {
-  const db = getDb();
-  const result = db.prepare("DELETE FROM users WHERE name = ?").run(name);
-  return result.changes > 0;
-}
-
-export function countUsers(): number {
-  const { n } = getDb()
-    .prepare("SELECT COUNT(*) AS n FROM users")
-    .get() as { n: number };
-  return n;
-}
-
 export function ensureSeedUsers(db?: Database.Database): void {
   const d = db ?? getDb();
   const count = (d.prepare("SELECT COUNT(*) AS n FROM users").get() as { n: number }).n;

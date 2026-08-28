@@ -333,23 +333,6 @@ export function FamilyChat({ user }: FamilyChatProps) {
       .catch(() => {});
   }
 
-  async function handleDeleteUser(name: string) {
-    if (!window.confirm(`Benutzer „${name}" wirklich löschen?`)) return;
-    try {
-      const res = await fetch("/api/user/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) { alert(data?.error ?? "Löschen fehlgeschlagen."); return; }
-      setViewingMember(null);
-      loadUsers();
-    } catch {
-      alert("Netzwerkfehler beim Löschen.");
-    }
-  }
-
   useEffect(() => { loadUsers(); }, []);
   useEffect(() => { const i = setInterval(loadUsers, 10000); return () => clearInterval(i); }, []);
 
@@ -672,7 +655,7 @@ export function FamilyChat({ user }: FamilyChatProps) {
       {showAnnouncement && <AnnouncementModal onClose={() => setShowAnnouncement(false)} onCreate={handleCreateAnnouncement} />}
       {reactionMsg && <ReactionSheet msg={reactionMsg} onReact={(id, e) => void handleReact(id, e)} onClose={() => setReactionMsg(null)} />}
       {reactionInfo && <ReactionInfoPopup messages={messages} info={reactionInfo} meName={currentUserData.name} onToggle={(id, e) => void handleReact(id, e)} onClose={() => setReactionInfo(null)} />}
-      {viewingMember && <MemberProfile user={viewingMember} meName={currentUserData.name} onClose={() => setViewingMember(null)} onDelete={handleDeleteUser} />}
+      {viewingMember && <MemberProfile user={viewingMember} meName={currentUserData.name} onClose={() => setViewingMember(null)} />}
       {showCamera && <CameraModal onDone={(b, v, cap) => void handleCameraDone(b, v, cap)} onClose={() => setShowCamera(false)} />}
     </>
   );
@@ -814,7 +797,7 @@ function VoiceBubble({ url, own, author, meName, timeLabel, showName }: {
   );
 }
 
-function MemberProfile({ user, meName, onClose, onDelete }: { user: User; meName: string; onClose: () => void; onDelete: (name: string) => void }) {
+function MemberProfile({ user, meName, onClose }: { user: User; meName: string; onClose: () => void }) {
   const colors = avatarColors(user.name);
   const dotColor = statusDotColor(user.status);
   const memberCss = `
@@ -838,8 +821,6 @@ function MemberProfile({ user, meName, onClose, onDelete }: { user: User; meName
 .mp-row-label{font-size:12px;color:#8A90B8;text-transform:uppercase;letter-spacing:.5px}
 .mp-row-value{font-size:14px;color:#EDEFFA;font-weight:500;display:flex;align-items:center;gap:6px}
 .mp-chip{padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
-.mp-del{margin-top:10px;width:100%;padding:13px;border-radius:14px;border:1px solid rgba(239,68,68,.25);background:rgba(239,68,68,.08);color:#f87171;font-size:14px;font-weight:700;cursor:pointer;transition:.15s;font-family:inherit}
-.mp-del:hover{background:rgba(239,68,68,.16)}
 `;
   const statusColors: Record<string, string> = { "Zeit": "#5EEAD4", "Beschäftigt": "#F2C879", "Später": "#F2C879", "Kein Bock": "#F87171" };
   return (
@@ -895,9 +876,6 @@ function MemberProfile({ user, meName, onClose, onDelete }: { user: User; meName
                 </div>
               </div>
             </div>
-            {meName !== user.name && (
-              <button className="mp-del" onClick={() => onDelete(user.name)}>Benutzer löschen</button>
-            )}
           </div>
         </div>
       </div>
