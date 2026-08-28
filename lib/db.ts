@@ -196,6 +196,8 @@ function initDb(): Database.Database {
     db.exec("ALTER TABLE chat_messages ADD COLUMN description TEXT");
   }
 
+  ensureSeedUsers(db);
+
   return db;
 }
 
@@ -247,6 +249,29 @@ export function getUserByName(name: string): User | null {
     .prepare("SELECT * FROM users WHERE name = ?")
     .get(name) as UserRow | undefined;
   return row ? rowToUser(row) : null;
+}
+
+export function deleteUserByName(name: string): boolean {
+  const db = getDb();
+  const result = db.prepare("DELETE FROM users WHERE name = ?").run(name);
+  return result.changes > 0;
+}
+
+export function countUsers(): number {
+  const { n } = getDb()
+    .prepare("SELECT COUNT(*) AS n FROM users")
+    .get() as { n: number };
+  return n;
+}
+
+export function ensureSeedUsers(db?: Database.Database): void {
+  const d = db ?? getDb();
+  const count = (d.prepare("SELECT COUNT(*) AS n FROM users").get() as { n: number }).n;
+  if (count === 0) {
+    d.prepare(
+      "INSERT INTO users (name, birthday, device_id) VALUES (?, ?, ?)"
+    ).run("Simon1", "01.01.2000", null);
+  }
 }
 
 export function updateUserProfile(

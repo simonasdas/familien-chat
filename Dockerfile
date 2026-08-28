@@ -22,19 +22,20 @@ FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
-    HOSTNAME=0.0.0.0 \
-    PORT=3000
+    HOSTNAME=0.0.0.0
 
-RUN addgroup --system --gid 1001 nodejs \
-    && adduser --system --uid 1001 nextjs
-
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/package.json ./package.json
 
 # Ensure the persistent data dir exists and is writable
-RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
+RUN addgroup --system --gid 1001 nodejs \
+    && adduser --system --uid 1001 nextjs \
+    && mkdir -p /app/data \
+    && chown -R nextjs:nodejs /app/data /app/node_modules /app/.next /app/public /app/package.json
 
 USER nextjs
 EXPOSE 3000
-CMD ["node", "server.js"]
+ENV PORT=3000
+CMD ["npm", "run", "start"]

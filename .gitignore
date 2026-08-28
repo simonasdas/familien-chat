@@ -4,3 +4,5 @@ data
 *.log
 .DS_Store
 npm-debug.log*
+tsconfig.tsbuildinfo
+tools/cloudflared.exe
