@@ -242,6 +242,13 @@ export function getUserById(id: number): User | null {
   return row ? rowToUser(row) : null;
 }
 
+export function getUserByName(name: string): User | null {
+  const row = getDb()
+    .prepare("SELECT * FROM users WHERE name = ?")
+    .get(name) as UserRow | undefined;
+  return row ? rowToUser(row) : null;
+}
+
 export function updateUserProfile(
   id: number,
   data: { name?: string; profileImage?: string | null; status?: string; vacation?: string; customStatus?: string }

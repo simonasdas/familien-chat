@@ -16,14 +16,39 @@ const MONTHS = [
 const YEARS = Array.from({ length: 80 }, (_, i) => String(2026 - i));
 
 export function RegistrationForm({ onRegistered }: RegistrationFormProps) {
+  const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
+  const [loginName, setLoginName] = useState("");
   const [day, setDay] = useState("");
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  async function handleSubmit(event: React.FormEvent) {
+  async function handleLoginSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setError(null);
+    const trimmedName = loginName.trim();
+    if (!trimmedName) { setError("Bitte gib deinen Namen ein."); return; }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/user/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmedName }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) { setError(data?.error ?? "Anmeldung fehlgeschlagen."); return; }
+      window.localStorage.setItem("familie:user", JSON.stringify({ name: trimmedName }));
+      onRegistered(data.user);
+    } catch {
+      setError("Netzwerkfehler – bitte erneut versuchen.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleRegisterSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
     const trimmedName = name.trim();
@@ -72,7 +97,52 @@ export function RegistrationForm({ onRegistered }: RegistrationFormProps) {
             <p className="reg-sub">Dein privater Raum für die Familie</p>
           </div>
 
-          <form onSubmit={(e) => void handleSubmit(e)} className="reg-form">
+          <div className="reg-tabs">
+            <button type="button" className={`reg-tab ${mode === "login" ? "active" : ""}`} onClick={() => { setMode("login"); setError(null); }}>Anmelden</button>
+            <button type="button" className={`reg-tab ${mode === "register" ? "active" : ""}`} onClick={() => { setMode("register"); setError(null); }}>Registrieren</button>
+          </div>
+
+          {mode === "login" ? (
+            <form onSubmit={(e) => void handleLoginSubmit(e)} className="reg-form">
+              <div className="reg-field">
+                <label htmlFor="reg-login-name">Dein Name</label>
+                <div className="reg-input-wrap">
+                  <svg className="reg-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                  <input
+                    id="reg-login-name"
+                    value={loginName}
+                    onChange={(e) => setLoginName(e.target.value)}
+                    maxLength={80}
+                    autoFocus
+                    required
+                    placeholder="Dein Name"
+                  />
+                </div>
+              </div>
+
+              {error && <div className="reg-error">{error}</div>}
+
+              <button type="submit" disabled={submitting} className="reg-btn">
+                {submitting ? (
+                  <span className="reg-btn-loading">
+                    <span className="reg-spinner" />
+                    Wird angemeldet…
+                  </span>
+                ) : (
+                  <span className="reg-btn-content">
+                    Anmelden
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+                  </span>
+                )}
+              </button>
+
+              <p className="reg-hint">Zugang bleibt dauerhaft auf diesem Gerät gespeichert.</p>
+            </form>
+          ) : (
+          <form onSubmit={(e) => void handleRegisterSubmit(e)} className="reg-form">
             {/* Name */}
             <div className="reg-field">
               <label htmlFor="reg-name">Wie heißt du?</label>
@@ -139,6 +209,7 @@ export function RegistrationForm({ onRegistered }: RegistrationFormProps) {
 
             <p className="reg-hint">Zugang bleibt dauerhaft auf diesem Gerät gespeichert.</p>
           </form>
+          )}
         </div>
       </div>
     </>
@@ -157,6 +228,10 @@ const regCss = `
 .reg-logo{width:100%;height:100%;border-radius:19px;background:linear-gradient(135deg,#5EEAD4,#2FA599);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(94,234,212,.3)}
 .reg-title{font-family:'Space Grotesk',system-ui;font-size:24px;font-weight:700;color:#EDEFFA;letter-spacing:.02em}
 .reg-sub{font-size:13px;color:#8A90B8;margin-top:6px}
+.reg-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px;background:rgba(29,35,66,.55);padding:5px;border-radius:14px;border:1px solid rgba(42,49,88,.5)}
+.reg-tab{border:none;background:transparent;color:#8A90B8;font-size:13px;font-weight:600;padding:10px;border-radius:10px;cursor:pointer;transition:all .2s;font-family:inherit}
+.reg-tab.active{background:linear-gradient(135deg,#5EEAD4,#2FA599);color:#0B1B20;box-shadow:0 4px 14px rgba(94,234,212,.2)}
+.reg-tab:not(.active):hover{color:#EDEFFA}
 .reg-form{display:flex;flex-direction:column;gap:20px}
 .reg-field label{display:block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8A90B8;margin-bottom:9px;font-family:'Space Grotesk',system-ui}
 .reg-input-wrap{position:relative;display:flex;align-items:center}
