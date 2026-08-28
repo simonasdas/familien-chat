@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: familien-chat
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+    disk:
+      name: familien-chat-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
