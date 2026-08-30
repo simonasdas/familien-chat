@@ -11,6 +11,7 @@ import { AnnouncementModal } from "@/components/announcement-modal";
 import { AnnouncementCard } from "@/components/announcement-card";
 import { ReactionSheet } from "@/components/reaction-sheet";
 import CameraModal from "@/components/camera-modal";
+import { CallOverlay } from "@/components/call-overlay";
 
 interface FamilyChatProps {
   user: User;
@@ -97,6 +98,7 @@ export function FamilyChat({ user }: FamilyChatProps) {
   const [viewingMember, setViewingMember] = useState<User | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const [cameraSending, setCameraSending] = useState(false);
+  const [callTarget, setCallTarget] = useState<User | null>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
   const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -655,8 +657,9 @@ export function FamilyChat({ user }: FamilyChatProps) {
       {showAnnouncement && <AnnouncementModal onClose={() => setShowAnnouncement(false)} onCreate={handleCreateAnnouncement} />}
       {reactionMsg && <ReactionSheet msg={reactionMsg} onReact={(id, e) => void handleReact(id, e)} onClose={() => setReactionMsg(null)} />}
       {reactionInfo && <ReactionInfoPopup messages={messages} info={reactionInfo} meName={currentUserData.name} onToggle={(id, e) => void handleReact(id, e)} onClose={() => setReactionInfo(null)} />}
-      {viewingMember && <MemberProfile user={viewingMember} meName={currentUserData.name} onClose={() => setViewingMember(null)} />}
+      {viewingMember && <MemberProfile user={viewingMember} meName={currentUserData.name} onClose={() => setViewingMember(null)} onCall={(u) => { setViewingMember(null); setCallTarget(u); }} />}
       {showCamera && <CameraModal onDone={(b, v, cap) => void handleCameraDone(b, v, cap)} onClose={() => setShowCamera(false)} />}
+      <CallOverlay me={currentUserData.name} target={callTarget} onDismiss={() => setCallTarget(null)} />
     </>
   );
 }
@@ -797,7 +800,7 @@ function VoiceBubble({ url, own, author, meName, timeLabel, showName }: {
   );
 }
 
-function MemberProfile({ user, meName, onClose }: { user: User; meName: string; onClose: () => void }) {
+function MemberProfile({ user, meName, onClose, onCall }: { user: User; meName: string; onClose: () => void; onCall: (u: User) => void }) {
   const colors = avatarColors(user.name);
   const dotColor = statusDotColor(user.status);
   const memberCss = `
@@ -821,6 +824,8 @@ function MemberProfile({ user, meName, onClose }: { user: User; meName: string; 
 .mp-row-label{font-size:12px;color:#8A90B8;text-transform:uppercase;letter-spacing:.5px}
 .mp-row-value{font-size:14px;color:#EDEFFA;font-weight:500;display:flex;align-items:center;gap:6px}
 .mp-chip{padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.mp-call-btn{width:100%;margin-top:6px;padding:13px;border-radius:14px;border:none;background:linear-gradient(135deg,#5EEAD4,#2FA599);color:#0B1B20;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s;font-family:inherit}
+.mp-call-btn:hover{filter:brightness(1.06)}
 `;
   const statusColors: Record<string, string> = { "Zeit": "#5EEAD4", "Beschäftigt": "#F2C879", "Später": "#F2C879", "Kein Bock": "#F87171" };
   return (
